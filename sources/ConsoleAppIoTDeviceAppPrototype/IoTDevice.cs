@@ -8,7 +8,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleAppIoTDeviceForFunctionProto
+namespace ConsoleAppIoTDeviceAppPrototype
 {
     internal class IoTDevice
     {
@@ -23,15 +23,17 @@ namespace ConsoleAppIoTDeviceForFunctionProto
 
         static readonly string dpKeyInterval = "interval";
 
-        public IoTDevice(string connectionString,  Logger logger)
+        public IoTDevice(string connectionString, Logger logger)
         {
             this.connectionString = connectionString;
             this.logger = logger;
+            deviceClient = DeviceClient.CreateFromConnectionString(this.connectionString);
+            random = new Random(DateTime.Now.Millisecond);
+            cancellationTokenSource = new CancellationTokenSource();
         }
 
-        public async Task StartAsync()
+        public async Task InitializeAsync()
         {
-            deviceClient = DeviceClient.CreateFromConnectionString(connectionString);
             deviceClient.SetConnectionStatusChangesHandler(ConnectionStatusChanged);
             await deviceClient.SetDesiredPropertyUpdateCallbackAsync(DesiredPropertyUpdated, this);
             await deviceClient.SetMethodDefaultHandlerAsync(MethodInvoked, this);
@@ -51,10 +53,17 @@ namespace ConsoleAppIoTDeviceForFunctionProto
             await NotifyStatus("initialized");
         }
 
-        public async Task StopAsync()
+        public async Task TerminateAsync()
         {
-            cancellationTokenSource.Cancel();
-            workTask.Wait();
+            var currentWorking = false;
+            lock (this)
+            {
+                currentWorking = workng;
+            }
+            if (currentWorking)
+            {
+                await StopWork();
+            }
             await NotifyStatus("terminated");
             await deviceClient.CloseAsync();
         }
@@ -66,53 +75,57 @@ namespace ConsoleAppIoTDeviceForFunctionProto
                 workng = true;
             }
             await NotifyStatus("working");
-            cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
-            random = new Random(DateTime.Now.Millisecond);
             workTask = new Task(async () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                while (true)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    while (true)
+                    var data = new IoTDataPacket()
                     {
-                        var data = new IoTDataPacket()
-                        {
-                            x = random.NextDouble(),
-                            y = random.NextDouble(),
-                            z = random.Next()
-                        };
-                        var msg = new Message(System.Text.Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data)));
-                        await deviceClient.SendEventAsync(msg);
-                        await Task.Delay(sendInterval);
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
-                    }
+                        Temperature = 25 + random.NextDouble(),
+                        Humidity = 50 + random.NextDouble(),
+                        Pressure = 1000 + random.NextDouble(),
+                        Timestamp = DateTime.Now
+                    };
+                    var msg = new Message(System.Text.Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data)));
+                    await deviceClient.SendEventAsync(msg);
+                    int currentSendInterval = 1000;
                     lock (this)
                     {
-                        workng = false;
+                        currentSendInterval = sendInterval;
                     }
-                    await NotifyStatus("Stopping");
+                    await Task.Delay(currentSendInterval);
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
                 }
+                lock (this)
+                {
+                    workng = false;
+                }
+            }
             );
             workTask.Start();
         }
 
         public async Task StartWork()
         {
-            bool currentWorking = false;
+            var currentWorking = false;
             lock (this)
             {
                 currentWorking = this.workng;
             }
-            if (currentWorking==false)
+            if (currentWorking == false)
             {
                 await WorkAsync();
+                Task.WaitAll(workTask);
             }
         }
         public async Task StopWork()
         {
-            bool currentWorking = false;
+            var currentWorking = false;
             lock (this)
             {
                 currentWorking = this.workng;
@@ -120,7 +133,8 @@ namespace ConsoleAppIoTDeviceForFunctionProto
             if (workng)
             {
                 cancellationTokenSource.Cancel();
-                workTask.Wait();
+                Task.WaitAll(workTask);
+                await NotifyStatus("stopped");
             }
         }
 
@@ -128,9 +142,12 @@ namespace ConsoleAppIoTDeviceForFunctionProto
         {
             var rp = new ReportedProperties()
             {
-                status = status,
-                interval = this.sendInterval
+                status = status
             };
+            lock (this)
+            {
+                rp.interval = sendInterval;
+            }
             var reportedProperties = new TwinCollection(Newtonsoft.Json.JsonConvert.SerializeObject(rp));
             await deviceClient.UpdateReportedPropertiesAsync(reportedProperties);
         }
@@ -139,6 +156,7 @@ namespace ConsoleAppIoTDeviceForFunctionProto
         private async Task ReceivedMessage(Message message, object userContext)
         {
             await logger.LogInfo($"Received Message - '{System.Text.Encoding.UTF8.GetString(message.GetBytes())}'");
+            await deviceClient.CompleteAsync(message);
         }
 
         private async Task<MethodResponse> MethodInvoked(MethodRequest methodRequest, object userContext)
@@ -146,7 +164,7 @@ namespace ConsoleAppIoTDeviceForFunctionProto
             await logger.LogInfo($"Invoked Method - {methodRequest.Name}(payload:{methodRequest.DataAsJson})");
             var responsePayload = new
             {
-                message = "Done"
+                message = "done"
             };
             switch (methodRequest.Name)
             {
@@ -157,18 +175,21 @@ namespace ConsoleAppIoTDeviceForFunctionProto
                     await StopWork();
                     break;
             }
-            return new MethodResponse(System.Text.Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(responsePayload)), (int)HttpStatusCode.OK);             
+            return new MethodResponse(System.Text.Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(responsePayload)), (int)HttpStatusCode.OK);
         }
 
         private async Task DesiredPropertyUpdated(TwinCollection desiredProperties, object userContext)
         {
             await logger.LogInfo($"Updated Desired Properties - '{desiredProperties.ToJson()}'");
-            if(desiredProperties.Contains(dpKeyInterval))
+            if (desiredProperties.Contains(dpKeyInterval))
             {
-                sendInterval = (int)desiredProperties[dpKeyInterval];
+                lock (this)
+                {
+                    sendInterval = (int)desiredProperties[dpKeyInterval];
+                }
                 await NotifyStatus("Updated");
             }
-            
+
         }
 
         private void ConnectionStatusChanged(ConnectionStatus status, ConnectionStatusChangeReason reason)
@@ -179,9 +200,10 @@ namespace ConsoleAppIoTDeviceForFunctionProto
 
     public class IoTDataPacket
     {
-        public double x { get; set; }
-        public double y { get; set; }
-        public int z { get; set; }
+        public double Temperature { get; set; }
+        public double Humidity { get; set; }
+        public double Pressure { get; set; }
+        public DateTime Timestamp { get; set; }
     }
     public class ReportedProperties
     {

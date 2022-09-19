@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ConsoleAppIoTDeviceAppPrototype": {
+      "commandName": "Project",
+      "commandLineArgs": "\"HostName=<your iot hub name>.azure-devices.net;DeviceId=<device name>;SharedAccessKey=<sas key for the device>\""
+    }
+  }
+}

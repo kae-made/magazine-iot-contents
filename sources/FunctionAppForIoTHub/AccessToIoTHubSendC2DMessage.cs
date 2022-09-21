@@ -15,7 +15,7 @@ namespace FunctionAppForIoTHub
 {
     public static class AccessToIoTHubSendC2DMessage
     {
-        [FunctionName("Function1")]
+        [FunctionName("C2DMessage")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)

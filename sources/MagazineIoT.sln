@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppForIoTHub", "Fun
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppIoTHubD2C", "FunctionAppIoTHubD2C\FunctionAppIoTHubD2C.csproj", "{F4048CB4-9D86-41D8-9873-4455AD996F57}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppIoTHubDigitalTwins", "FunctionAppIoTHubDigitalTwins\FunctionAppIoTHubDigitalTwins.csproj", "{8860C6E7-2FFC-4A01-B20A-3FC52F832819}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{F4048CB4-9D86-41D8-9873-4455AD996F57}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4048CB4-9D86-41D8-9873-4455AD996F57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4048CB4-9D86-41D8-9873-4455AD996F57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8860C6E7-2FFC-4A01-B20A-3FC52F832819}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8860C6E7-2FFC-4A01-B20A-3FC52F832819}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8860C6E7-2FFC-4A01-B20A-3FC52F832819}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8860C6E7-2FFC-4A01-B20A-3FC52F832819}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

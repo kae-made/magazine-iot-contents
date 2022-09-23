@@ -1,0 +1,72 @@
+{
+  "@context": "dtmi:dtdl:context;2",
+  "@id": "dtmi:com:kae:sample:TestDevice;1",
+  "@type": "Interface",
+  "displayName": "TestDevice",
+  "contents": [
+    {
+      "@type": "Telemetry",
+      "name": "Environment",
+      "schema": {
+        "@type": "Object",
+        "fields": [
+          {
+            "name": "Temperature",
+            "schema": "double"
+          },
+          {
+            "name": "Humidity",
+            "schema": "double"
+          },
+          {
+            "name": "Pressure",
+            "schema": "double"
+          },
+          {
+            "name": "Timestamp",
+            "schema": "dateTime"
+          }
+        ]
+      }
+    },
+    {
+      "@type": "Property",
+      "name": "DeviceStatus",
+      "schema": "string",
+      "writable": false,
+      "displayName": "Device Status"
+    },
+    {
+      "@type": "Property",
+      "name": "CurrentInterval",
+      "schema": "integer",
+      "writable": false,
+      "displayName": "Current Interval (msec)"
+    },
+    {
+      "@type": "Property",
+      "name": "RequestInterval",
+      "schema": "integer",
+      "writable": true,
+      "displayName": "Request Interval (msec)"
+    },
+    {
+      "@type": "Command",
+      "name": "Start",
+      "response": {
+        "name": "message",
+        "schema": "string"
+      },
+      "description": "Start sending telemetry"
+    },
+    {
+      "@type": "Command",
+      "name": "Stop",
+      "response": {
+        "name": "message",
+        "schema": "string",
+        "description": "Stop sending telemetry"
+      }
+    }
+  ]
+}

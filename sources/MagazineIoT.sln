@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppIoTHubD2C", "Fun
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppIoTHubDigitalTwins", "FunctionAppIoTHubDigitalTwins\FunctionAppIoTHubDigitalTwins.csproj", "{8860C6E7-2FFC-4A01-B20A-3FC52F832819}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppForStreamAnalytics", "FunctionAppForStreamAnalytics\FunctionAppForStreamAnalytics.csproj", "{B81FC815-1535-4802-861E-893F51E09418}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{8860C6E7-2FFC-4A01-B20A-3FC52F832819}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8860C6E7-2FFC-4A01-B20A-3FC52F832819}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8860C6E7-2FFC-4A01-B20A-3FC52F832819}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B81FC815-1535-4802-861E-893F51E09418}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B81FC815-1535-4802-861E-893F51E09418}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B81FC815-1535-4802-861E-893F51E09418}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B81FC815-1535-4802-861E-893F51E09418}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

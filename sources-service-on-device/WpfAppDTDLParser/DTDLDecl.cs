@@ -15,20 +15,21 @@ namespace WpfAppDTDLParser
         private List<string> telemetries = new List<string>();
         private List<string> commands = new List<string>();
         private List<(string name, string target)> relationships = new List<(string name, string target)>();
-        public string Name { get; set; }
+        public string DisplayName { get; set; }
         public string Id { get; set; }
         public List<string> Extends { get { return extends; } }
         public List<string> Properties { get { return properties; } }
         public List<string> Telemetries { get { return telemetries; } }
         public List<string> Commands { get { return commands; } }
         public List<(string name, string target)> Relationships { get { return relationships; } }
+        public bool Available { get; set; }
 
         public void Resolve(DTInterfaceInfo dtdlDecl)
         {
             Id = dtdlDecl.Id.AbsolutePath;
             foreach (var ifName in dtdlDecl.DisplayName)
             {
-                Name = ifName.Value;
+                DisplayName = ifName.Value;
                 break;
             }
             foreach(var ext in dtdlDecl.Extends)
@@ -63,7 +64,8 @@ namespace WpfAppDTDLParser
 
         public TreeViewData GetTreeViewData()
         {
-            var result = new TreeViewData() { Name = Id, Children = new ObservableCollection<TreeViewData>() };
+            var result = new TreeViewData() { Name = Id, Children = new ObservableCollection<TreeViewData>(), Available = this.Available };
+            result.Children.Add(new TreeViewData() { Name = DisplayName });
             if (extends.Count > 0)
             {
 
@@ -81,6 +83,7 @@ namespace WpfAppDTDLParser
                 {
                     propsTVD.Children.Add(new TreeViewData() { Name = prop });
                 }
+                result.Children.Add(propsTVD);
             }
             if (relationships.Count> 0)
             {
@@ -89,6 +92,7 @@ namespace WpfAppDTDLParser
                 {
                     relsTVD.Children.Add(new TreeViewData() { Name = $"{rel.name} -> {rel.target}" });
                 }
+                result.Children.Add(relsTVD);
             }
             if (telemetries.Count > 0)
             {
@@ -97,6 +101,7 @@ namespace WpfAppDTDLParser
                 {
                     telsTVD.Children.Add(new TreeViewData() { Name = tel, Children = new ObservableCollection<TreeViewData>() });
                 }
+                result.Children.Add(telsTVD);
             }
             if (commands.Count > 0)
             {
@@ -105,6 +110,7 @@ namespace WpfAppDTDLParser
                 {
                     cmdsTVD.Children.Add(new TreeViewData() { Name = cmd, Children = new ObservableCollection<TreeViewData>() });
                 }
+                result.Children.Add(cmdsTVD);
             }
 
             return result;

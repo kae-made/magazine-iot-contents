@@ -1,0 +1,112 @@
+﻿<Window x:Class="WpfAppADTOperation.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfAppADTOperation"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="1350">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Border BorderBrush="Azure" Margin="1" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="200"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock Name="tbDTDLFiles" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+                <Button Name="buttonSelectDTDLFiles" Content="Select" Margin="1" HorizontalAlignment="Right" Click="buttonSelectDTDLFiles_Click" />
+                <Button Name="buttonParseDTDLFiles" Content="Parse" Grid.Row="1" Margin="1" IsEnabled="False" Click="buttonParseDTDLFiles_Click"/>
+                <ListBox Name="lbInterfaces" Grid.Row="2" Margin="1" SelectionChanged="lbInterfaces_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Id.AbsoluteUri}" VerticalAlignment="Center" ></TextBlock>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListBoxItem}">
+                            <EventSetter Event="MouseDoubleClick" Handler="DTInterface_MouseDoubleClick"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+                <ListBox Name="lbTwins" Grid.Row="3" Margin="1"/>
+            </Grid>
+        </Border>
+        <Border BorderBrush="Azure" Grid.Column="1" Margin="1" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBox Name="tbADTUri" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+                <Button Name="buttonConnect" Content="Connect" Margin="1" HorizontalAlignment="Right" IsEnabled="False" Click="buttonConnect_Click"/>
+                <Grid Margin="1" Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="$dtdi : " VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <TextBlock Name="tbDtDi" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+                    <ListBox Name="lbTwinProps" Grid.Row="1" Grid.ColumnSpan="2">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="185"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="240"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                    <TextBlock Text="{Binding PropertyKind}" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    <TextBox Text="{Binding Value}" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Stretch" IsEnabled="{Binding Writable}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                 </Grid>
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Name="buttonTwinCreate" Content="Create" Margin="1" IsEnabled="False" Click="buttonTwinCreate_Click"/>
+                    <Button Name="buttonTwinUpdate" Content="Update" Grid.Column="1" Margin="1" IsEnabled="False"/>
+                    <Button Name="buttonTwinDelete" Content="Delete" Grid.Column="2" Margin="1" IsEnabled="False"/>
+                </Grid>
+                <Grid Grid.Row="3">
+                    <ListBox Name="lbRelationships" Margin="1"/>
+                </Grid>
+            </Grid>
+        </Border>
+        <Border BorderBrush="Azure" Grid.Column="2" Margin="1" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Name="buttonLink" Content="Link" Margin="1" IsEnabled="False"/>
+                    <Button Name="buttonUnlink" Content="Unlink" Margin="1" Grid.Column="1" IsEnabled="False"/>
+                </Grid>
+                <ListBox Name="lbLinkedTwins" Grid.Row="1" Margin="1"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

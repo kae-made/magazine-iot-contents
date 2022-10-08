@@ -15,16 +15,7 @@ namespace WpfAppADTOperation
         private bool writable = true;
         private string propertyKind = "";
         private DTPropertyInfo propInfo = null;
-
-        public TwinProperty(DTPropertyInfo propInfo)
-        {
-            this.propInfo = propInfo;
-        }
-
-        public TwinProperty()
-        {
-            ;
-        }
+        private DTFieldInfo fieldInfo = null;
 
         public string Name
         {
@@ -67,6 +58,9 @@ namespace WpfAppADTOperation
 
         public DTEntityKind DataTypeOfValue { get; set; }
 
+        public DTPropertyInfo PropertyInfo { get { return propInfo; } set { propInfo = value; } }
+        public DTFieldInfo FieldInfo { get { return fieldInfo; } set { fieldInfo = value; } }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private void OnPropertyChanged(string name)
@@ -79,53 +73,172 @@ namespace WpfAppADTOperation
 
         public object GetDataTypedValue()
         {
-            object dataType = null;
+            object dataValue = null;
+            DTSchemaInfo schemaInfo = null;
+            if (propInfo != null)
+            {
+                schemaInfo = propInfo.Schema;
+            }
+            else if (fieldInfo != null)
+            {
+                schemaInfo = fieldInfo.Schema;
+            }
+            if (schemaInfo == null)
+            {
+                throw new ArgumentOutOfRangeException("propInfo or fieldInfo shoudn't be null!");
+            }
+            if (DataTypeOfValue == DTEntityKind.Array)
+            {
+                dataValue = ConvertToValueAsSpecifiedValue(Value, (DTArrayInfo)schemaInfo);
+            }
+            else if (DataTypeOfValue == DTEntityKind.Enum)
+            {
+                dataValue = ConvertToValueAsSpecifiedValue(Value, (DTEnumInfo)schemaInfo);
+            }
+            else
+            {
+                dataValue = ConvertToValueAsSpecifiedValue(Value, DataTypeOfValue);
+            }
 
-            switch (DataTypeOfValue)
+            return dataValue;
+        }
+
+        public static object ConvertToValueAsSpecifiedValue(string currentValue, DTEnumInfo enumInfo)
+        {
+            object dataValue = null;
+            if (enumInfo.ValueSchema.EntityKind== DTEntityKind.String)
+            {
+                if (string.IsNullOrEmpty(currentValue))
+                {
+                    dataValue = "";
+                }
+                else
+                {
+                    dataValue = currentValue;
+                }
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(currentValue))
+                {
+                    dataValue = 0;
+                }
+                else
+                {
+                    dataValue=int.Parse(currentValue);
+                }
+            }
+            return dataValue;
+        }
+
+        public static List<object> ConvertToValueAsSpecifiedValue(string currentValue, DTArrayInfo arrayInfo)
+        {
+            var dataValue = new List<object>();
+
+            if (!string.IsNullOrEmpty(currentValue))
+            {
+                var elemsInDataValue = currentValue.Split(new char[] { ',' });
+                foreach (var elem in elemsInDataValue)
+                {
+                    var elemValue = elem.Trim();
+                    var convertedValue = ConvertToValueAsSpecifiedValue(elemValue, arrayInfo.ElementSchema.EntityKind);
+                    dataValue.Add(convertedValue);
+                }
+            }
+
+            return dataValue;
+        }
+        public static object ConvertToValueAsSpecifiedValue(string currentValue, DTEntityKind entityKind)
+        {
+            object dataValue = null;
+            switch (entityKind)
             {
                 case DTEntityKind.Array:
                     break;
                 case DTEntityKind.Boolean:
-                    dataType = bool.Parse(Value);
+                    if (string.IsNullOrEmpty(currentValue))
+                    {
+                        dataValue = false;
+                    }
+                    else
+                    {
+                        dataValue = bool.Parse(currentValue);
+                    }
                     break;
                 case DTEntityKind.Date:
                 case DTEntityKind.DateTime:
                 case DTEntityKind.Time:
-                    dataType = DateTime.Parse(Value);
-                    break;
-                case DTEntityKind.Double:
-                    dataType = double.Parse(Value);
-                    break;
-                case DTEntityKind.Duration:
-                    dataType =TimeSpan.Parse(Value);
-                    break;
-                case DTEntityKind.Enum:
-                    var enumSchema = (DTEnumInfo)propInfo.Schema;
-                    if (enumSchema.ValueSchema.EntityKind== DTEntityKind.String)
+                    if (string.IsNullOrEmpty(currentValue))
                     {
-                        dataType = Value;
+                        dataValue = "";
                     }
                     else
                     {
-                        dataType = int.Parse(Value);
+                        dataValue = DateTime.Parse(currentValue);
                     }
                     break;
+                case DTEntityKind.Double:
+                    if (string.IsNullOrEmpty(currentValue))
+                    {
+                        dataValue = (double)0.0;
+                    }
+                    else
+                    {
+                        dataValue = double.Parse(currentValue);
+                    }
+                    break;
+                case DTEntityKind.Duration:
+                    if (string.IsNullOrEmpty(currentValue))
+                    {
+                        dataValue = TimeSpan.FromTicks(0);
+                    }
+                    else
+                    {
+                        dataValue = TimeSpan.Parse(currentValue);
+                    }
+                    break;
+                case DTEntityKind.Enum:
+                    throw new ArgumentOutOfRangeException("Please use 'ConvertToValueAsSpecifiedValue(string currentValue, DTEnumInfo enumInfo)' for enumeration");
                 case DTEntityKind.Float:
-                    dataType = float.Parse(Value);
+                    if (string.IsNullOrEmpty(currentValue))
+                    {
+                        dataValue = (float)0.0;
+                    }
+                    else
+                    {
+                        dataValue = float.Parse(currentValue);
+                    }
                     break;
                 case DTEntityKind.Integer:
-                    dataType = int.Parse(Value);
+                    if (string.IsNullOrEmpty(currentValue))
+                    {
+                        dataValue = (int)0;
+                    }
+                    else
+                    {
+                        dataValue = int.Parse(currentValue);
+                    }
                     break;
                 case DTEntityKind.Long:
-                    dataType = long.Parse(Value);
+                    if (string.IsNullOrEmpty(currentValue))
+                    {
+                        dataValue = (long)0;
+                    }
+                    else
+                    {
+                        dataValue = long.Parse(currentValue);
+                    }
                     break;
                 case DTEntityKind.String:
-                    dataType = Value;
+                    dataValue = currentValue;
+                    if (string.IsNullOrEmpty(currentValue))
+                    {
+                        dataValue = "";
+                    }
                     break;
             }
 
-
-            return dataType;
+            return dataValue;
         }
     }
 }

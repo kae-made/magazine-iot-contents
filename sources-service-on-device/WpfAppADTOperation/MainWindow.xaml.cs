@@ -1,4 +1,5 @@
-﻿using Azure.DigitalTwins.Core;
+﻿using Azure;
+using Azure.DigitalTwins.Core;
 using Azure.Identity;
 using Microsoft.Azure.DigitalTwins.Parser;
 using Microsoft.Extensions.Configuration;
@@ -49,56 +50,31 @@ namespace WpfAppADTOperation
             lbTwinProps.ItemsSource = twinProperties;
             lbRelationships.ItemsSource = relationshipsForSelectedInterface;
             lbLinkedTwins.ItemsSource = linkedTwins;
-        }
+            var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+            string adtInstanceUrl = configuration.GetConnectionString("ADT");
+            tbADTUri.Text = adtInstanceUrl;
 
-        private Dictionary<string, string> dtdlFiles = new Dictionary<string, string>();
-        private void buttonSelectDTDLFiles_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new OpenFileDialog();
-            dialog.Filter = "DTDL Files(.json)|*.json";
-            dialog.Multiselect = true;
-            if (dialog.ShowDialog() == true)
+            var credential = new DefaultAzureCredential();
+            try
             {
-                dtdlFiles.Clear();
-                tbDTDLFiles.Text = "";
-                buttonParseDTDLFiles.IsEnabled = false;
-                foreach (var file in dialog.FileNames)
-                {
-                    var fileInfo = new FileInfo(file);
-                    if (!string.IsNullOrEmpty(tbDTDLFiles.Text))
-                    {
-                        tbDTDLFiles.Text += ", ";
-                    }
-                    tbDTDLFiles.Text += fileInfo.Name;
-                    dtdlFiles.Add(fileInfo.Name, file);
-                }
+                adtClient = new DigitalTwinsClient(new Uri(adtInstanceUrl), credential);
             }
-            if (dtdlFiles.Count > 0)
+            catch (Exception ex)
             {
-                buttonParseDTDLFiles.IsEnabled = true;
+                MessageBox.Show(ex.Message);
             }
-
         }
 
         List<string> modelsJson = new List<string>();
         private async void buttonParseDTDLFiles_Click(object sender, RoutedEventArgs e)
         {
+            if (modelsJson.Count == 0)
+            {
+                return;
+            }
             var parser = new ModelParser();
             try
             {
-                modelsJson.Clear();
-                foreach (var dtdlFile in dtdlFiles.Keys)
-                {
-                    using (var reader = new StreamReader(dtdlFiles[dtdlFile]))
-                    {
-                        var json = reader.ReadToEnd();
-                        string dtdlFileName = dtdlFile.Substring(0, dtdlFile.LastIndexOf(".json"));
-                        if (dtdlFileName.LastIndexOf("_iotpnp") < 0)
-                        {
-                            modelsJson.Add(json);
-                        }
-                    }
-                }
                 dtInterfaceDefs.Clear();
                 var parseResultForJson = await parser.ParseAsync(modelsJson);
                 foreach (var declKey in parseResultForJson.Keys)
@@ -115,6 +91,8 @@ namespace WpfAppADTOperation
                         }
                     }
                 }
+                buttonGetModels.IsEnabled = true;
+                buttonParseDTDLFiles.IsEnabled = false;
             }
             catch (Exception ex)
             {
@@ -124,28 +102,12 @@ namespace WpfAppADTOperation
                     MessageBox.Show(ex.InnerException.Message);
                 }
             }
-            if (dtInterfaceDefs.Count > 0)
-            {
-                buttonConnect.IsEnabled = true;
-            }
         }
 
         DigitalTwinsClient adtClient = null;
 
         private async void buttonConnect_Click(object sender, RoutedEventArgs e)
         {
-            var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-            string adtInstanceUrl = configuration.GetConnectionString("ADT");
-
-            var credential = new DefaultAzureCredential();
-            try
-            {
-                adtClient = new DigitalTwinsClient(new Uri(adtInstanceUrl), credential);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
 
         }
 
@@ -188,7 +150,8 @@ namespace WpfAppADTOperation
                         case DTEntityKind.String:
                         case DTEntityKind.Time:
                         case DTEntityKind.Enum:
-                            tp = new TwinProperty(propInfo) { Name = propInfo.Name, DataTypeOfValue = schema.EntityKind };
+                            tp = new TwinProperty() { Name = propInfo.Name, DataTypeOfValue = schema.EntityKind };
+                            tp.PropertyInfo = propInfo;
                             tp.Name = propInfo.Name;
                             if (propVals != null)
                             {
@@ -249,6 +212,7 @@ namespace WpfAppADTOperation
                     case DTEntityKind.String:
                     case DTEntityKind.Time:
                         tp = new TwinProperty() { Name = fieldName, DataTypeOfValue = fieldInfo.Schema.EntityKind };
+                        tp.FieldInfo = fieldInfo;
                         if (propVals != null)
                         {
                             tp.Value = propVals[fieldName];
@@ -322,13 +286,15 @@ namespace WpfAppADTOperation
             {
                 var contents = new Dictionary<string, object>();
                 string twinId = "";
+                var objectValues = new Dictionary<string, Dictionary<string, object>>();
                 foreach (var tp in twinProperties)
                 {
                     if (tp.IsIdentity)
                     {
                         twinId = (string)tp.Value;
                     }
-                    if (!string.IsNullOrEmpty(tp.Value))
+                    var names = tp.Name.Split(new char[] { '.' });
+                    if (names.Length == 1)
                     {
                         object typedValue = tp.GetDataTypedValue();
                         if (typedValue != null)
@@ -336,8 +302,26 @@ namespace WpfAppADTOperation
                             contents.Add(tp.Name, typedValue);
                         }
                     }
+                    else
+                    {
+                        if (names.Length > 2)
+                        {
+                            MessageBox.Show("Not support deeper than 2 levels");
+                        }
+                        else
+                        {
+                            if (!objectValues.ContainsKey(names[0]))
+                            {
+                                objectValues.Add(names[0], new Dictionary<string, object>());
+                            }
+                            objectValues[names[0]].Add(names[1], tp.GetDataTypedValue());
+                        }
+                    }
                 }
-
+                foreach(var ovk in objectValues.Keys)
+                {
+                    contents.Add(ovk, objectValues[ovk]);
+                }
                 if (!currentModelId.StartsWith("dtmi"))
                 {
                     currentModelId = $"dtmi:{currentModelId}";
@@ -359,6 +343,34 @@ namespace WpfAppADTOperation
             {
                 MessageBox.Show(ex.Message);
             }
+        }
+        Dictionary<string,DigitalTwinsModelData> gotModels = new Dictionary<string,DigitalTwinsModelData>();
+        private async void buttonGetModels_Click(object sender, RoutedEventArgs e)
+        {
+            if (adtClient == null)
+            {
+                return;
+            }
+            buttonGetModels.IsEnabled = false;
+            AsyncPageable<DigitalTwinsModelData> models = adtClient.GetModelsAsync(new GetModelsOptions() { IncludeModelDefinition = true });
+            modelsJson.Clear();
+            gotModels.Clear();
+            await foreach (var model in models)
+            {
+                var id = model.Id;
+                string displayName = model.LanguageDisplayNames.Values.First();
+                if (!string.IsNullOrEmpty(model.DtdlModel))
+                {
+                    modelsJson.Add(model.DtdlModel);
+                }
+                gotModels.Add(id, model);
+            }
+            if (modelsJson.Count > 0)
+            {
+                buttonParseDTDLFiles.IsEnabled = true;
+                buttonGetModels.IsEnabled = false;
+            }
+            MessageBox.Show($"Got {modelsJson.Count} models.");
         }
     }
 }

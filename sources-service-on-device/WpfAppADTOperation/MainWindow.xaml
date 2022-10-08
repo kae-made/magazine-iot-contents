@@ -20,8 +20,8 @@
                     <RowDefinition Height="200"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <TextBlock Name="tbDTDLFiles" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
-                <Button Name="buttonSelectDTDLFiles" Content="Select" Margin="1" HorizontalAlignment="Right" Click="buttonSelectDTDLFiles_Click" />
+                <TextBox Name="tbADTUri" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+                <Button Name="buttonGetModels" Margin="1" HorizontalAlignment="Right" Content="Get Models" Click="buttonGetModels_Click"/>
                 <Button Name="buttonParseDTDLFiles" Content="Parse" Grid.Row="1" Margin="1" IsEnabled="False" Click="buttonParseDTDLFiles_Click"/>
                 <ListBox Name="lbInterfaces" Grid.Row="2" Margin="1" SelectionChanged="lbInterfaces_SelectionChanged">
                     <ListBox.ItemTemplate>
@@ -41,14 +41,11 @@
         <Border BorderBrush="Azure" Grid.Column="1" Margin="1" BorderThickness="1">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="30"/>
                     <RowDefinition/>
                     <RowDefinition Height="30"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <TextBox Name="tbADTUri" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
-                <Button Name="buttonConnect" Content="Connect" Margin="1" HorizontalAlignment="Right" IsEnabled="False" Click="buttonConnect_Click"/>
-                <Grid Margin="1" Grid.Row="1">
+                <Grid Margin="1" Grid.Row="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30"/>
                         <RowDefinition/>
@@ -76,7 +73,7 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                  </Grid>
-                <Grid Grid.Row="2">
+                <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition/>
@@ -86,7 +83,7 @@
                     <Button Name="buttonTwinUpdate" Content="Update" Grid.Column="1" Margin="1" IsEnabled="False"/>
                     <Button Name="buttonTwinDelete" Content="Delete" Grid.Column="2" Margin="1" IsEnabled="False"/>
                 </Grid>
-                <Grid Grid.Row="3">
+                <Grid Grid.Row="2">
                     <ListBox Name="lbRelationships" Margin="1"/>
                 </Grid>
             </Grid>

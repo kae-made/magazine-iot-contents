@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -119,10 +120,24 @@ namespace WpfAppADTOperation
             buttonTwinCreate.IsEnabled = true;
         }
 
-        private void lbInterfaces_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        string selectedTwinModelId = null;
+        private async void lbInterfaces_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var ifInfo = (DTInterfaceInfo)lbInterfaces.SelectedItem;
             currentModelId = ifInfo.Id.AbsolutePath;
+
+            selectedTwinModelId = currentModelId;
+            if (!currentModelId.StartsWith("dtmi:"))
+            {
+                selectedTwinModelId = $"dtmi:{currentModelId}";
+            }
+            string query = $"SELECT $dtId FROM DIGITALTWINS WHERE IS_OF_MODEL('{selectedTwinModelId}')";
+            AsyncPageable<BasicDigitalTwin> queryResult = adtClient.QueryAsync<BasicDigitalTwin>(query);
+            twinsForSelectedInterface.Clear();
+            await foreach(var twin in queryResult)
+            {
+                twinsForSelectedInterface.Add(twin.Id);
+            }
         }
 
         private void SetTwinProperties(DTInterfaceInfo ifInfo, Dictionary<string, string> propVals=null)
@@ -289,6 +304,10 @@ namespace WpfAppADTOperation
                 var objectValues = new Dictionary<string, Dictionary<string, object>>();
                 foreach (var tp in twinProperties)
                 {
+                    if (string.IsNullOrEmpty(tp.Value))
+                    {
+                        continue;
+                    }
                     if (tp.IsIdentity)
                     {
                         twinId = (string)tp.Value;
@@ -371,6 +390,191 @@ namespace WpfAppADTOperation
                 buttonGetModels.IsEnabled = false;
             }
             MessageBox.Show($"Got {modelsJson.Count} models.");
+        }
+
+        private string selectedTwinId = null;
+        private async void lbTwins_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(selectedTwinModelId))
+            {
+                return;
+            }
+            selectedTwinId = (string)lbTwins.SelectedItem;
+            if (string.IsNullOrEmpty(selectedTwinId))
+            {
+                return;
+            }
+            string targetTwinModelId = selectedTwinModelId;
+            if (selectedTwinModelId.StartsWith("dtmi:"))
+            {
+                targetTwinModelId = selectedTwinModelId.Substring("dtmi:".Length);
+            }
+            var selectedInterfaceInfo = dtInterfaceDefs.Where(item => { return item.Id.AbsolutePath == targetTwinModelId; }).FirstOrDefault();
+            if (selectedInterfaceInfo != null)
+            {
+                SetTwinProperties(selectedInterfaceInfo);
+                foreach(var twinInList in twinProperties)
+                {
+                    twinInList.Registed = false;
+                    twinInList.OldValue = "";
+                }
+            }
+            try
+            {
+                string query = $"SELECT * FROM DIGITALTWINS T WHERE IS_OF_MODEL('{selectedTwinModelId}') AND T.$dtId = '{selectedTwinId}'";
+                AsyncPageable<BasicDigitalTwin> queryResult = adtClient.QueryAsync<BasicDigitalTwin>(query);
+                await foreach (var twin in queryResult)
+                {
+                    foreach (var twinPropKey in twin.Contents.Keys)
+                    {
+                        var twinPropVal = twin.Contents[twinPropKey];
+                        if (twinPropVal is JsonElement)
+                        {
+                            bool unregisted = true;
+                            var twinPropValJE = (JsonElement)twinPropVal;
+                            string currentValue = "";
+                            if (twinPropValJE.ValueKind == JsonValueKind.Object)
+                            {
+                                foreach (var field in twinPropValJE.EnumerateObject())
+                                {
+                                    currentValue = field.Value.ToString();
+                                    string fieldKey = $"{twinPropKey}.{field.Name}";
+                                    foreach (var propFolder in twinProperties)
+                                    {
+                                        if (propFolder.Name == fieldKey)
+                                        {
+                                            propFolder.Value = currentValue;
+                                            propFolder.OldValue= currentValue;
+                                            propFolder.Registed = true;
+                                            break;
+                                        }
+                                    }
+
+                                }
+                            }
+                            else if (twinPropValJE.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var item in twinPropValJE.EnumerateArray())
+                                {
+                                    if (!string.IsNullOrEmpty(currentValue))
+                                    {
+                                        currentValue += ",";
+                                    }
+                                    currentValue += item.GetString();
+                                }
+                            }
+                            else
+                            {
+                                currentValue = twinPropValJE.GetString();
+                            }
+                            if (unregisted)
+                            {
+                                foreach (var propFolder in twinProperties)
+                                {
+                                    if (propFolder.Name == twinPropKey)
+                                    {
+                                        propFolder.Value = currentValue;
+                                        propFolder.OldValue = currentValue;
+                                        propFolder.Registed = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                buttonTwinUpdate.IsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private async void buttonTwinUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            string targetTwinModelId = selectedTwinModelId;
+            if (selectedTwinModelId.StartsWith("dtmi:"))
+            {
+                targetTwinModelId = selectedTwinModelId.Substring("dtmi:".Length);
+            }
+            var selectedInterfaceInfo = dtInterfaceDefs.Where(item => { return item.Id.AbsolutePath == targetTwinModelId; }).FirstOrDefault();
+            if (selectedInterfaceInfo != null)
+            {
+                try
+                {
+                    var updateTwinData = new JsonPatchDocument();
+                    foreach (var ck in selectedInterfaceInfo.Contents.Keys)
+                    {
+                        var cv = selectedInterfaceInfo.Contents[ck];
+                        object editedValue = null;
+                        bool registed = false;
+                        bool updated = false;
+                        if (cv.EntityKind == DTEntityKind.Property)
+                        {
+                            var propInfo = (DTPropertyInfo)cv;
+                            if (propInfo.Schema.EntityKind == DTEntityKind.Object)
+                            {
+                                var fieledFolders = twinProperties.Where(item => { return item.Name.StartsWith(ck); }).ToList();
+                                if (fieledFolders.Count > 0)
+                                {
+                                    var fieldValues = new Dictionary<string, object>();
+                                    foreach (var fieldFolder in fieledFolders)
+                                    {
+                                        if (!string.IsNullOrEmpty(fieldFolder.Value))
+                                        {
+                                            object fieldValue = fieldFolder.GetDataTypedValue();
+                                            string fieldName = fieldFolder.Name.Substring(fieldFolder.Name.LastIndexOf(".") + 1);
+                                            registed = fieldFolder.Registed;
+                                            if (fieldValue != null && $"{fieldValue}" != fieldFolder.OldValue)
+                                            {
+                                                updated = true;
+                                                fieldValues.Add(fieldName, fieldValue);
+                                            }
+                                            // Dictionary 形式ではなくて、"PreferedEnvironment/Temperature" か？
+                                        }
+                                    }
+                                    if (fieldValues.Count > 0)
+                                    {
+                                        editedValue = fieldValues;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var fieldFolder = twinProperties.Where(item => { return item.Name == ck; }).FirstOrDefault();
+                                if (fieldFolder != null)
+                                {
+                                    editedValue = fieldFolder.GetDataTypedValue();
+                                    registed = fieldFolder.Registed;
+                                    if (fieldFolder.OldValue != $"{editedValue}")
+                                    {
+                                        updated = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (updated)
+                        {
+                            if (registed)
+                            {
+                                updateTwinData.AppendReplace($"/{ck}", editedValue);
+
+                            }
+                            else
+                            {
+                                updateTwinData.AppendAdd($"/{ck}", editedValue);
+                            }
+                        }
+                    }
+                    await adtClient.UpdateDigitalTwinAsync(selectedTwinId, updateTwinData);
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            }
         }
     }
 }

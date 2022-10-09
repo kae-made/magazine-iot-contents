@@ -35,7 +35,7 @@
                         </Style>
                     </ListBox.ItemContainerStyle>
                 </ListBox>
-                <ListBox Name="lbTwins" Grid.Row="3" Margin="1"/>
+                <ListBox Name="lbTwins" Grid.Row="3" Margin="1" SelectionChanged="lbTwins_SelectionChanged"/>
             </Grid>
         </Border>
         <Border BorderBrush="Azure" Grid.Column="1" Margin="1" BorderThickness="1">
@@ -80,7 +80,7 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <Button Name="buttonTwinCreate" Content="Create" Margin="1" IsEnabled="False" Click="buttonTwinCreate_Click"/>
-                    <Button Name="buttonTwinUpdate" Content="Update" Grid.Column="1" Margin="1" IsEnabled="False"/>
+                    <Button Name="buttonTwinUpdate" Content="Update" Grid.Column="1" Margin="1" IsEnabled="False" Click="buttonTwinUpdate_Click"/>
                     <Button Name="buttonTwinDelete" Content="Delete" Grid.Column="2" Margin="1" IsEnabled="False"/>
                 </Grid>
                 <Grid Grid.Row="2">

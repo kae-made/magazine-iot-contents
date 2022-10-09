@@ -61,6 +61,9 @@ namespace WpfAppADTOperation
         public DTPropertyInfo PropertyInfo { get { return propInfo; } set { propInfo = value; } }
         public DTFieldInfo FieldInfo { get { return fieldInfo; } set { fieldInfo = value; } }
 
+        public bool Registed { get; set; } = false;
+        public string OldValue { get; set; }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private void OnPropertyChanged(string name)

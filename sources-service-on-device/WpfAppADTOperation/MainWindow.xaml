@@ -84,7 +84,10 @@
                     <Button Name="buttonTwinDelete" Content="Delete" Grid.Column="2" Margin="1" IsEnabled="False"/>
                 </Grid>
                 <Grid Grid.Row="2">
-                    <ListBox Name="lbRelationships" Margin="1"/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <ListBox Name="lbRelationships" Margin="1" SelectionChanged="lbRelationships_SelectionChanged"/>
                 </Grid>
             </Grid>
         </Border>
@@ -93,16 +96,19 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="30"/>
                     <RowDefinition/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Button Name="buttonLink" Content="Link" Margin="1" IsEnabled="False"/>
-                    <Button Name="buttonUnlink" Content="Unlink" Margin="1" Grid.Column="1" IsEnabled="False"/>
-                </Grid>
-                <ListBox Name="lbLinkedTwins" Grid.Row="1" Margin="1"/>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Candidates : " Margin="1" Grid.Row="2" VerticalAlignment="Center"/>
+                <TextBlock Text="Linked : " Margin="1" Grid.Row="0" VerticalAlignment="Center"/>
+                <Button Name="buttonLink" Content="Link" Margin="1" Grid.Row="2" Grid.Column="1" IsEnabled="False" Click="buttonLink_Click"/>
+                <Button Name="buttonUnlink" Content="Unlink" Margin="1" Grid.Row="0" Grid.Column="1" IsEnabled="False" Click="buttonUnlink_Click"/>
+                <ListBox Name="lbCandidatesOfLinkTarget" Grid.Row="3" Grid.ColumnSpan="2" Margin="1" SelectionChanged="lbCandidatesOfLinkTarget_SelectionChanged"/>
+                <ListBox Name="lbLinkedTwins" Grid.Row="1" Grid.ColumnSpan="2" Margin="1" SelectionChanged="lbLinkedTwins_SelectionChanged"/>
             </Grid>
         </Border>
     </Grid>

@@ -35,6 +35,7 @@ namespace WpfAppADTOperation
         private ObservableCollection<string> twinsForSelectedInterface = new ObservableCollection<string>();
         private ObservableCollection<string> relationshipsForSelectedInterface = new ObservableCollection<string>();
         private ObservableCollection<string> linkedTwins = new ObservableCollection<string>();
+        private ObservableCollection<string> candidateTwinsForRelationship = new ObservableCollection<string>();
 
         private string currentModelId = "";
 
@@ -51,6 +52,8 @@ namespace WpfAppADTOperation
             lbTwinProps.ItemsSource = twinProperties;
             lbRelationships.ItemsSource = relationshipsForSelectedInterface;
             lbLinkedTwins.ItemsSource = linkedTwins;
+            lbCandidatesOfLinkTarget.ItemsSource = candidateTwinsForRelationship;
+
             var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
             string adtInstanceUrl = configuration.GetConnectionString("ADT");
             tbADTUri.Text = adtInstanceUrl;
@@ -118,6 +121,7 @@ namespace WpfAppADTOperation
             SetTwinProperties(ifInfo);
             
             buttonTwinCreate.IsEnabled = true;
+            buttonTwinUpdate.IsEnabled = false;
         }
 
         string selectedTwinModelId = null;
@@ -393,6 +397,7 @@ namespace WpfAppADTOperation
         }
 
         private string selectedTwinId = null;
+        private Dictionary<string, DTRelationshipInfo> currentRelationships = new Dictionary<string, DTRelationshipInfo>();
         private async void lbTwins_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (string.IsNullOrEmpty(selectedTwinModelId))
@@ -418,6 +423,11 @@ namespace WpfAppADTOperation
                     twinInList.Registed = false;
                     twinInList.OldValue = "";
                 }
+            }
+            else
+            {
+                MessageBox.Show("Please select Twin Model Id!");
+                return;
             }
             try
             {
@@ -463,6 +473,10 @@ namespace WpfAppADTOperation
                                     currentValue += item.GetString();
                                 }
                             }
+                            else if (twinPropValJE.ValueKind== JsonValueKind.Number)
+                            {
+                                currentValue = $"{twinPropValJE.GetInt64()}";
+                            }
                             else
                             {
                                 currentValue = twinPropValJE.GetString();
@@ -484,6 +498,19 @@ namespace WpfAppADTOperation
                     }
                 }
                 buttonTwinUpdate.IsEnabled = true;
+
+                relationshipsForSelectedInterface.Clear();
+                currentRelationships.Clear();
+                foreach(var ck in selectedInterfaceInfo.Contents.Keys)
+                {
+                    var c = selectedInterfaceInfo.Contents[ck];
+                    if (c.EntityKind== DTEntityKind.Relationship)
+                    {
+                        var relInfo = (DTRelationshipInfo)c;
+                        relationshipsForSelectedInterface.Add(relInfo.Id.AbsolutePath);
+                        currentRelationships.Add(relInfo.Id.AbsolutePath, relInfo);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -574,6 +601,183 @@ namespace WpfAppADTOperation
                 {
                     MessageBox.Show(ex.Message);
                 }
+            }
+        }
+
+        private DTRelationshipInfo selectedRelationshipInfo = null;
+        private Dictionary<string, BasicRelationship> relationshipsForTargetTwin = new Dictionary<string, BasicRelationship>();
+        private async void lbRelationships_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lbRelationships.SelectedItem == null)
+            {
+                candidateTwinsForRelationship.Clear();
+                return;
+            }
+            string relId = lbRelationships.SelectedItem.ToString();
+            selectedRelationshipInfo = currentRelationships[relId];
+            string targetTwinModelId = selectedRelationshipInfo.Target.AbsolutePath;
+            if (!targetTwinModelId.StartsWith("dtmi:"))
+            {
+                targetTwinModelId = $"dtmi:{targetTwinModelId}";
+            }
+            try
+            {
+                linkedTwins.Clear();
+                relationshipsForTargetTwin.Clear();
+                AsyncPageable<BasicRelationship> linkedRelationships = adtClient.GetRelationshipsAsync<BasicRelationship>(selectedTwinId, selectedRelationshipInfo.Name);
+                await foreach (var linkedRelationship in linkedRelationships)
+                {
+                    linkedTwins.Add(linkedRelationship.TargetId);
+                    relationshipsForTargetTwin.Add(linkedRelationship.TargetId, linkedRelationship);
+                }
+
+                bool notEnough = true;
+                if (selectedRelationshipInfo.MaxMultiplicity != null && selectedRelationshipInfo.MaxMultiplicity.Value <= linkedTwins.Count)
+                {
+                    notEnough = false;
+                }
+                if (notEnough)
+                {
+                    string query = $"SELECT $dtId FROM DIGITALTWINS WHERE IS_OF_MODEL('{targetTwinModelId}')";
+                    AsyncPageable<BasicDigitalTwin> queryResult = adtClient.QueryAsync<BasicDigitalTwin>(query);
+                    candidateTwinsForRelationship.Clear();
+                    await foreach (var twin in queryResult)
+                    {
+                        var registedTwins = linkedTwins.Where(id => { return id == twin.Id; });
+                        if (registedTwins.Count() == 0)
+                        {
+                            candidateTwinsForRelationship.Add(twin.Id);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private string selectedTwinIdForLinking = "";
+        private void lbCandidatesOfLinkTarget_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lbCandidatesOfLinkTarget.SelectedItem == null)
+            {
+                return;
+            }
+            selectedTwinIdForLinking = (string)lbCandidatesOfLinkTarget.SelectedItem;
+            buttonLink.IsEnabled = true;
+        }
+
+        private string selectedTwinIdForUnlinking = "";
+        private void lbLinkedTwins_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lbLinkedTwins.SelectedItem == null)
+            {
+                return;
+            }
+            selectedTwinIdForUnlinking = (string)lbLinkedTwins.SelectedItem;
+            buttonUnlink.IsEnabled = true;
+        }
+
+        private async void buttonLink_Click(object sender, RoutedEventArgs e)
+        {
+            var relationship = new BasicRelationship()
+            {
+                TargetId = selectedTwinIdForLinking,
+                Name = selectedRelationshipInfo.Name
+            };
+            try
+            {
+                string relId = $"{selectedTwinId}-{selectedRelationshipInfo.Id.AbsolutePath}-{selectedTwinIdForLinking}";
+              
+                var selectedIfDef = (DTInterfaceInfo)lbInterfaces.SelectedItem;
+                var sourceTwinContentsUpdate = new JsonPatchDocument();
+                var formalizedPropsForRelationship = GetRelationshipFormalizedProperties(selectedIfDef, selectedRelationshipInfo);
+                foreach (var prop in formalizedPropsForRelationship)
+                {
+                    var editingTwinProp = twinProperties.Where(p => { return p.PropertyInfo.Id.AbsolutePath == prop.Id.AbsolutePath; }).FirstOrDefault();
+                    if (editingTwinProp != null)
+                    {
+                        editingTwinProp.Value = selectedTwinIdForLinking;
+                        if (editingTwinProp.Registed)
+                        {
+                            sourceTwinContentsUpdate.AppendReplace($"/{editingTwinProp.Name}", selectedTwinIdForLinking);
+                        }
+                        else
+                        {
+                            sourceTwinContentsUpdate.AppendAdd($"/{editingTwinProp.Name}", selectedTwinIdForLinking);
+                            editingTwinProp.Registed = true;
+                        }
+                        break;
+                    }
+                }
+                await adtClient.CreateOrReplaceRelationshipAsync<BasicRelationship>(selectedTwinId, relId, relationship);
+                await adtClient.UpdateDigitalTwinAsync(selectedTwinId, sourceTwinContentsUpdate);
+
+                MessageBox.Show($"Linked {relId}");
+
+                buttonLink.IsEnabled = false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private List<DTPropertyInfo> GetRelationshipFormalizedProperties(DTInterfaceInfo ifDef, DTRelationshipInfo relDef)
+        {
+            List<DTPropertyInfo> result = new List<DTPropertyInfo>();
+
+            string relName = relDef.Name.Substring(0, relDef.Name.LastIndexOf("_"));
+            foreach (var ck in ifDef.Contents.Keys)
+            {
+                var c = ifDef.Contents[ck];
+                if (c.EntityKind == DTEntityKind.Property)
+                {
+                    var propDef = (DTPropertyInfo)c;
+                    if ((!string.IsNullOrEmpty(propDef.Comment)) && propDef.Comment.StartsWith("@") && propDef.Comment.IndexOf("R") > 0)
+                    {
+                        string[] colorings = propDef.Comment.Substring(1).Split(new char[] { ',' });
+                        foreach (var coloring in colorings)
+                        {
+                            if (coloring == relName)
+                            {
+                                result.Add(propDef);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private async void buttonUnlink_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedTwinIdForUnlinking == null)
+            {
+                return;
+            }
+            var relationship = relationshipsForTargetTwin[selectedTwinIdForUnlinking];
+            try
+            {
+                var selectedIfDef = (DTInterfaceInfo)lbInterfaces.SelectedItem;
+                var sourceTwinContentsUpdate = new JsonPatchDocument();
+                var formalizedPropsForRelationship = GetRelationshipFormalizedProperties(selectedIfDef, selectedRelationshipInfo);
+                foreach(var propDef in formalizedPropsForRelationship)
+                {
+                    sourceTwinContentsUpdate.AppendReplace($"/{propDef.Name}", "");
+                }
+                await adtClient.UpdateDigitalTwinAsync(selectedTwinId, sourceTwinContentsUpdate);
+                await adtClient.DeleteRelationshipAsync(selectedTwinId, relationship.Id);
+                linkedTwins.Remove(selectedTwinIdForUnlinking);
+                buttonUnlink.IsEnabled = false;
+                MessageBox.Show($"Unlinked - {relationship.Id}");
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
     }

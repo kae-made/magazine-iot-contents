@@ -7,11 +7,13 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -39,6 +41,8 @@ namespace WpfAppADTOperation
 
         private string currentModelId = "";
 
+        WorkingProgress workingProgress = new WorkingProgress();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -57,6 +61,9 @@ namespace WpfAppADTOperation
             var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
             string adtInstanceUrl = configuration.GetConnectionString("ADT");
             tbADTUri.Text = adtInstanceUrl;
+
+            this.pbProcessModeling.DataContext = workingProgress;
+            this.tbProcessing.DataContext = workingProgress;
 
             var credential = new DefaultAzureCredential();
             try
@@ -374,8 +381,39 @@ namespace WpfAppADTOperation
             {
                 return;
             }
+#if false
+            pbProcessModeling.Visibility = Visibility.Visible;
+            tbProcessing.Visibility = Visibility.Visible;
+            workingProgress.Processing = "Getting Models...";
+            workingProgress.Progress = 0;
+            var cancelationSource = new CancellationTokenSource();
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    int cp = workingProgress.Progress;
+                    if (++cp >= pbProcessModeling.Maximum)
+                    {
+                        cp = 0;
+                    }
+                    workingProgress.Progress = cp;
+                    await Task.Delay(100, cancelationSource.Token);
+                    if (cancelationSource.Token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                }
+            });
+#endif
             buttonGetModels.IsEnabled = false;
             AsyncPageable<DigitalTwinsModelData> models = adtClient.GetModelsAsync(new GetModelsOptions() { IncludeModelDefinition = true });
+
+#if false
+            cancelationSource.Cancel();
+            tbProcessing.Visibility = Visibility.Hidden;
+            pbProcessModeling.Visibility = Visibility.Hidden;
+#endif
+
             modelsJson.Clear();
             gotModels.Clear();
             await foreach (var model in models)
@@ -767,7 +805,8 @@ namespace WpfAppADTOperation
                 var formalizedPropsForRelationship = GetRelationshipFormalizedProperties(selectedIfDef, selectedRelationshipInfo);
                 foreach(var propDef in formalizedPropsForRelationship)
                 {
-                    sourceTwinContentsUpdate.AppendReplace($"/{propDef.Name}", "");
+                    sourceTwinContentsUpdate.AppendRemove($"/{propDef.Name}");
+//                    sourceTwinContentsUpdate.AppendReplace($"/{propDef.Name}", "");
                 }
                 await adtClient.UpdateDigitalTwinAsync(selectedTwinId, sourceTwinContentsUpdate);
                 await adtClient.DeleteRelationshipAsync(selectedTwinId, relationship.Id);
@@ -781,4 +820,40 @@ namespace WpfAppADTOperation
             }
         }
     }
+
+    public class WorkingProgress : INotifyPropertyChanged
+    {
+        private string processing;
+        private int progress;
+     
+        public string Processing
+        {
+            get { return processing; }
+            set
+            {
+                processing = value;
+                OnChanged("Processing");
+            }
+        }
+        public int Progress
+        {
+            get { return progress; }
+            set
+            {
+                progress = value;
+                OnChanged("Progress");
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private void OnChanged(string name)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(name));
+            }
+        }
+    }
+
 }

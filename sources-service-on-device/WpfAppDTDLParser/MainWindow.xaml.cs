@@ -259,6 +259,7 @@ namespace WpfAppDTDLParser
             {
                 await logger.LogInfo($"Service client created – ready to go");
                 await adtClient.CreateModelsAsync(modelsJson);
+                await logger.LogInfo("Model updated.");
             }
             catch (Exception ex)
             {
@@ -324,6 +325,7 @@ namespace WpfAppDTDLParser
                 {
                     string idOnADT = $"dtmi:{currentParsedInterface.Id.AbsolutePath}";
                     await adtClient.DecommissionModelAsync(idOnADT);
+                    await logger.LogInfo($"{currentParsedInterface.Id.AbsolutePath} has been dismissioned");
                 }
                 catch (Exception ex)
                 {
@@ -340,6 +342,13 @@ namespace WpfAppDTDLParser
                 {
                     string idOnADT = $"dtmi:{currentParsedInterface.Id.AbsolutePath}";
                     await adtClient.DeleteModelAsync(idOnADT);
+                    await logger.LogInfo($"{currentParsedInterface.Id.AbsolutePath} has been deleted.");
+                    parsedIfInfos.Remove(currentParsedInterface.Id.AbsolutePath);
+                    var deletedDTDL = parsedDTDLs.Where(tv => { return tv.Name == currentParsedInterface.Id.AbsolutePath; }).FirstOrDefault();
+                    if (deletedDTDL != null)
+                    {
+                        parsedDTDLs.Remove(deletedDTDL);
+                    }
                 }
                 catch (Exception ex)
                 {

@@ -35,7 +35,7 @@
                         </Style>
                     </ListBox.ItemContainerStyle>
                 </ListBox>
-                <StackPanel Orientation="Vertical" Grid.Row="2">
+                <StackPanel Orientation="Vertical" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Name="tbProcessing" Text="{Binding Processing}" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
                     <ProgressBar Name="pbProcessModeling" Value="{Binding Progress}" Height="50" Width="300" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
                </StackPanel>

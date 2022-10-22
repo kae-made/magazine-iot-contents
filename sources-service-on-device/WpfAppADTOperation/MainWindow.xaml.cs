@@ -381,38 +381,34 @@ namespace WpfAppADTOperation
             {
                 return;
             }
-#if false
+
             pbProcessModeling.Visibility = Visibility.Visible;
             tbProcessing.Visibility = Visibility.Visible;
             workingProgress.Processing = "Getting Models...";
             workingProgress.Progress = 0;
             var cancelationSource = new CancellationTokenSource();
-            Task.Run(async () =>
+            await Task.Factory.StartNew(async () =>
             {
-                while (true)
+                await Dispatcher.Invoke( async () =>
                 {
-                    int cp = workingProgress.Progress;
-                    if (++cp >= pbProcessModeling.Maximum)
+                    while (true)
                     {
-                        cp = 0;
+                        int cp = workingProgress.Progress;
+                        if (++cp >= pbProcessModeling.Maximum)
+                        {
+                            cp = 0;
+                        }
+                        workingProgress.Progress = cp;
+                        await Task.Delay(100, cancelationSource.Token);
+                        if (cancelationSource.Token.IsCancellationRequested)
+                        {
+                            break;
+                        }
                     }
-                    workingProgress.Progress = cp;
-                    await Task.Delay(100, cancelationSource.Token);
-                    if (cancelationSource.Token.IsCancellationRequested)
-                    {
-                        break;
-                    }
-                }
+                });
             });
-#endif
             buttonGetModels.IsEnabled = false;
             AsyncPageable<DigitalTwinsModelData> models = adtClient.GetModelsAsync(new GetModelsOptions() { IncludeModelDefinition = true });
-
-#if false
-            cancelationSource.Cancel();
-            tbProcessing.Visibility = Visibility.Hidden;
-            pbProcessModeling.Visibility = Visibility.Hidden;
-#endif
 
             modelsJson.Clear();
             gotModels.Clear();
@@ -431,6 +427,11 @@ namespace WpfAppADTOperation
                 buttonParseDTDLFiles.IsEnabled = true;
                 buttonGetModels.IsEnabled = false;
             }
+
+            cancelationSource.Cancel();
+            tbProcessing.Visibility = Visibility.Hidden;
+            pbProcessModeling.Visibility = Visibility.Hidden;
+
             MessageBox.Show($"Got {modelsJson.Count} models.");
         }
 

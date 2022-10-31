@@ -7,11 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleAppIoTDeviceAppProto
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppForIoTHub", "FunctionAppForIoTHub\FunctionAppForIoTHub.csproj", "{6D46664A-2801-4883-8D44-19E0947CC395}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppIoTHubD2C", "FunctionAppIoTHubD2C\FunctionAppIoTHubD2C.csproj", "{F4048CB4-9D86-41D8-9873-4455AD996F57}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppIoTHubD2C", "FunctionAppIoTHubD2C\FunctionAppIoTHubD2C.csproj", "{F4048CB4-9D86-41D8-9873-4455AD996F57}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppIoTHubDigitalTwins", "FunctionAppIoTHubDigitalTwins\FunctionAppIoTHubDigitalTwins.csproj", "{8860C6E7-2FFC-4A01-B20A-3FC52F832819}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppIoTHubDigitalTwins", "FunctionAppIoTHubDigitalTwins\FunctionAppIoTHubDigitalTwins.csproj", "{8860C6E7-2FFC-4A01-B20A-3FC52F832819}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppForStreamAnalytics", "FunctionAppForStreamAnalytics\FunctionAppForStreamAnalytics.csproj", "{B81FC815-1535-4802-861E-893F51E09418}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppForStreamAnalytics", "FunctionAppForStreamAnalytics\FunctionAppForStreamAnalytics.csproj", "{B81FC815-1535-4802-861E-893F51E09418}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionAppPublishTelemetry", "FunctionAppPublishTelemetry\FunctionAppPublishTelemetry.csproj", "{B9D510C8-63A0-4EEC-9B4A-33E98D699786}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{B81FC815-1535-4802-861E-893F51E09418}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B81FC815-1535-4802-861E-893F51E09418}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B81FC815-1535-4802-861E-893F51E09418}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9D510C8-63A0-4EEC-9B4A-33E98D699786}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9D510C8-63A0-4EEC-9B4A-33E98D699786}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9D510C8-63A0-4EEC-9B4A-33E98D699786}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9D510C8-63A0-4EEC-9B4A-33E98D699786}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

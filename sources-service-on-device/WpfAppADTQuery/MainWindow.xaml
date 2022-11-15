@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfAppADTQuery"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="1200">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -15,7 +15,7 @@
         <Button Name="buttonGetModels" Margin="1" Content="Get Models" HorizontalAlignment="Right" Click="buttonGetModels_Click"/>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
+                <ColumnDefinition Width="400"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <Grid>
@@ -40,9 +40,13 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <ListBox Name="lbOutgoingRelationships" Grid.Row="2" Margin="1"></ListBox>
+                    <StackPanel Orientation="Vertical" Grid.RowSpan="2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Name="tbProcessing" Text="{Binding Processing}" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
+                        <ProgressBar Name="pbProcessModeling" Value="{Binding Progress}" Height="50" Width="300" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
+                    </StackPanel>
+                    <ListBox Name="lbOutgoingRelationships" Grid.Row="2" Margin="1" SelectionChanged="lbOutgoingRelationships_SelectionChanged"></ListBox>
                     <TextBlock Text="Outgoing" Margin="1" VerticalAlignment="Top" HorizontalAlignment="Right" Grid.Row="2"/>
-                    <ListBox Name="lbInComingRelationships" Grid.Row="3" Margin="1"></ListBox>
+                    <ListBox Name="lbInComingRelationships" Grid.Row="3" Margin="1" SelectionChanged="lbInComingRelationships_SelectionChanged"></ListBox>
                     <TextBlock Text="Incoming" Margin="1" VerticalAlignment="Top" HorizontalAlignment="Right" Grid.Row="3"/>
                 </Grid>
             </Grid>
@@ -54,28 +58,37 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30"/>
-                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="70"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <Border Margin="1" Background="Azure">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="70"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Margin="1" Background="Azure" Grid.ColumnSpan="2">
                         <TextBlock Text="Query Twin : " VerticalAlignment="Center" HorizontalAlignment="Center"/>
                     </Border>
-                    <TextBox Name="tbTwinQuery" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Grid.Row="1"/>
-                    <Button Name="buttonExecTwinQuery" Content="Query" Margin="1" HorizontalAlignment="Right" Grid.Row="1" IsEnabled="False"/>
-                    <ListBox Name="lbTwins" Margin="1" Grid.Row="2"></ListBox>
+                    <TextBox Name="tbTwinQuery" Margin="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="1" TextWrapping="Wrap"/>
+                    <Button Name="buttonExecTwinQuery" Content="Query" Margin="1" Grid.Row="1" IsEnabled="False" Grid.Column="1" Click="buttonExecTwinQuery_Click"/>
+                    <ListBox Name="lbTwins" Margin="1" Grid.Row="2" Grid.ColumnSpan="2" SelectionChanged="lbTwins_SelectionChanged"></ListBox>
                 </Grid>
                 <Grid Grid.Row="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30"/>
-                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="70"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <Border Background="Azure">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="70"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Background="Azure" Grid.ColumnSpan="2">
                         <TextBlock Text="Traverse Relationship : " HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBox Name="tbTraverseQuery" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="1" Grid.Row="1"/>
-                    <Button Name="buttonTraverse" Content="Traverse" Margin="1" HorizontalAlignment="Right" Grid.Row="1" IsEnabled="False"/>
-                    <ListBox Name="lbLinkedTwins" Margin="1" Grid.Row="2"/>
+                    <TextBox Name="tbTraverseQuery" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="1" Grid.Row="1" TextWrapping="Wrap"/>
+                    <CheckBox Name="cbUseQueryForTrvs" Content="Use Query" Margin="1" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" IsEnabled="False"  Checked="cbUseQueryForTrvs_Checked" Unchecked="cbUseQueryForTrvs_Checked"/>
+                    <Button Name="buttonTraverse" Content="Traverse" Margin="1" Grid.Row="1" Grid.Column="2" IsEnabled="False" Click="buttonTraverse_Click" />
+                    <ListBox Name="lbLinkedTwins" Margin="1" Grid.Row="2" Grid.ColumnSpan="2"/>
                 </Grid>
             </Grid>
         </Grid>

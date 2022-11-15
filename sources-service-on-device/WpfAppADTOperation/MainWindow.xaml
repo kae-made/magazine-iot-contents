@@ -85,7 +85,7 @@
                     </Grid.ColumnDefinitions>
                     <Button Name="buttonTwinCreate" Content="Create" Margin="1" IsEnabled="False" Click="buttonTwinCreate_Click"/>
                     <Button Name="buttonTwinUpdate" Content="Update" Grid.Column="1" Margin="1" IsEnabled="False" Click="buttonTwinUpdate_Click"/>
-                    <Button Name="buttonTwinDelete" Content="Delete" Grid.Column="2" Margin="1" IsEnabled="False"/>
+                    <Button Name="buttonTwinDelete" Content="Delete" Grid.Column="2" Margin="1" IsEnabled="False" Click="buttonTwinDelete_Click"/>
                 </Grid>
                 <Grid Grid.Row="2">
                     <Grid.RowDefinitions>

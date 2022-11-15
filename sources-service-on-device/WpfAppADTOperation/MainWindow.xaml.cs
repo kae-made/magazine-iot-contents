@@ -537,6 +537,7 @@ namespace WpfAppADTOperation
                     }
                 }
                 buttonTwinUpdate.IsEnabled = true;
+                buttonTwinDelete.IsEnabled = true;
 
                 relationshipsForSelectedInterface.Clear();
                 currentRelationships.Clear();
@@ -734,7 +735,7 @@ namespace WpfAppADTOperation
                 var formalizedPropsForRelationship = GetRelationshipFormalizedProperties(selectedIfDef, selectedRelationshipInfo);
                 foreach (var prop in formalizedPropsForRelationship)
                 {
-                    var editingTwinProp = twinProperties.Where(p => { return p.PropertyInfo.Id.AbsolutePath == prop.Id.AbsolutePath; }).FirstOrDefault();
+                    var editingTwinProp = twinProperties.Where(p => { return (p.PropertyInfo!=null) && (p.PropertyInfo.Id.AbsolutePath == prop.Id.AbsolutePath); }).FirstOrDefault();
                     if (editingTwinProp != null)
                     {
                         editingTwinProp.Value = selectedTwinIdForLinking;
@@ -816,6 +817,25 @@ namespace WpfAppADTOperation
                 MessageBox.Show($"Unlinked - {relationship.Id}");
             }
             catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private async void buttonTwinDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedTwinId == null)
+            {
+                return;
+            }
+            try
+            {
+                await adtClient.DeleteDigitalTwinAsync(selectedTwinId);
+                MessageBox.Show($"Deleted - {selectedTwinId}");
+                buttonTwinDelete.IsEnabled = false;
+                buttonTwinUpdate.IsEnabled = false;
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }

@@ -48,6 +48,7 @@
                     <RowDefinition/>
                     <RowDefinition Height="30"/>
                     <RowDefinition/>
+                    <RowDefinition Height="30"/>
                 </Grid.RowDefinitions>
                 <Grid Margin="1" Grid.Row="0">
                     <Grid.RowDefinitions>
@@ -90,8 +91,21 @@
                 <Grid Grid.Row="2">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
+                        <RowDefinition Height="30"/>
                     </Grid.RowDefinitions>
                     <ListBox Name="lbRelationships" Margin="1" SelectionChanged="lbRelationships_SelectionChanged"/>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Visibility="Hidden" Name="spCSForDevice">
+                        <TextBlock Text="For Device : " VerticalAlignment="Center" Margin="1"/>
+                        <TextBox Name="tbCSForDevice" VerticalAlignment="Center" Margin="1"/>
+                    </StackPanel>
+                </Grid>
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="130"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Name="tbIoTHubConnectionString" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="1" IsEnabled="False"/>
+                    <CheckBox Name="cbSyncIoTHub" Content="Sync with IoT Hub" Grid.Column="1" VerticalAlignment="Center" Margin="1" IsEnabled="False" IsChecked="True" Visibility="Hidden"/>
                 </Grid>
             </Grid>
         </Border>

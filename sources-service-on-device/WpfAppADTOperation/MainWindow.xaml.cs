@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.DigitalTwins.Core;
 using Azure.Identity;
+using Microsoft.Azure.Devices;
 using Microsoft.Azure.DigitalTwins.Parser;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Win32;
@@ -49,6 +50,8 @@ namespace WpfAppADTOperation
             this.Loaded += MainWindow_Loaded;
         }
 
+        RegistryManager iotHubRegistryManager = null;
+        string connectionStringForDevicePrefix = "";
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             lbInterfaces.ItemsSource = dtInterfaceDefs;
@@ -61,6 +64,17 @@ namespace WpfAppADTOperation
             var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
             string adtInstanceUrl = configuration.GetConnectionString("ADT");
             tbADTUri.Text = adtInstanceUrl;
+
+            var iothubConnectionString = configuration.GetConnectionString("IOTHUB_REGISTRY_CONNECTIONSTRING");
+            if (!string.IsNullOrEmpty(iothubConnectionString))
+            {
+                tbIoTHubConnectionString.Text = iothubConnectionString;
+                tbIoTHubConnectionString.IsEnabled = true;
+                cbSyncIoTHub.Visibility = Visibility.Visible;
+                iotHubRegistryManager = RegistryManager.CreateFromConnectionString(iothubConnectionString);
+                var csBuilder = IotHubConnectionStringBuilder.Create(iothubConnectionString);
+                connectionStringForDevicePrefix = $"HostName={csBuilder.HostName};DeviceId=";
+            }
 
             this.pbProcessModeling.DataContext = workingProgress;
             this.tbProcessing.DataContext = workingProgress;
@@ -129,6 +143,19 @@ namespace WpfAppADTOperation
             
             buttonTwinCreate.IsEnabled = true;
             buttonTwinUpdate.IsEnabled = false;
+
+            if (ifInfo.Comment.StartsWith("@iotdevice"))
+            {
+                if (tbIoTHubConnectionString.IsEnabled)
+                {
+                    cbSyncIoTHub.IsEnabled = true;
+                }
+            }
+            else
+            {
+                cbSyncIoTHub.IsEnabled = false;
+            }
+            spCSForDevice.Visibility = Visibility.Hidden;
         }
 
         string selectedTwinModelId = null;
@@ -136,6 +163,7 @@ namespace WpfAppADTOperation
         {
             var ifInfo = (DTInterfaceInfo)lbInterfaces.SelectedItem;
             currentModelId = ifInfo.Id.AbsolutePath;
+            spCSForDevice.Visibility = Visibility.Hidden;
 
             selectedTwinModelId = currentModelId;
             if (!currentModelId.StartsWith("dtmi:"))
@@ -312,6 +340,7 @@ namespace WpfAppADTOperation
             {
                 var contents = new Dictionary<string, object>();
                 string twinId = "";
+                string deviceId = "";
                 var objectValues = new Dictionary<string, Dictionary<string, object>>();
                 foreach (var tp in twinProperties)
                 {
@@ -347,6 +376,10 @@ namespace WpfAppADTOperation
                             objectValues[names[0]].Add(names[1], tp.GetDataTypedValue());
                         }
                     }
+                    if (!string.IsNullOrEmpty(tp.PropertyInfo.Comment) && tp.PropertyInfo.Comment.IndexOf("@deviceid") >= 0)
+                    {
+                        deviceId = $"{tp.PropertyInfo.Name}={tp.Value}";
+                    }
                 }
                 foreach(var ovk in objectValues.Keys)
                 {
@@ -368,6 +401,13 @@ namespace WpfAppADTOperation
 
 
                 buttonTwinCreate.IsEnabled = false;
+
+                if (cbSyncIoTHub.IsChecked == true && !string.IsNullOrEmpty(deviceId))
+                {
+                    var iotDevice = await iotHubRegistryManager.AddDeviceAsync(new Device(deviceId));
+                    tbCSForDevice.Text = $"{connectionStringForDevicePrefix}{iotDevice.Id};SharedAccessKey={iotDevice.Authentication.SymmetricKey.PrimaryKey}";
+                    spCSForDevice.Visibility = Visibility.Visible;
+                }
             }
             catch (Exception ex)
             {

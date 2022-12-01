@@ -1,0 +1,21 @@
+iot-hub:
+## For SAS
+    connection-string: "HostName=<- youriothub ->.azure-devices.net;DeviceId=<- device id ->;SharedAccessKey=<- sas key for device ->"
+    transport-type: "amqp"
+    model-id: "dtmi:com:kae_made:BuildingManagement:MI:iotpnp;1"
+## For X509
+#    root-cert-path: "<- root cert file path ->"
+#    intermediate1-path: "<- intermediate1 cert file path ->"
+#    intermediate2-path: "<- intermediate1 cert file path ->"
+#    device-pfx-path: "<- device pfx file path ->"
+#    device-pfx-password: "<- device pfx password ->"
+#    host-name: "<- Iot Hub URL ->"
+#    device-id: "<- Device Id ->"
+dps:
+#    global-endpoint: "<- DPS Global Endpoint ->"
+#    id-scope: "<- DPS ID Scope ->"
+#    registration-id: "<- DPS Registration Id ->"
+#    sas-key: "<- DPS Symetric Primery Key ->"
+#	 cert-path: "<- Certificate Path ->"
+#    cert-password: "<- Certificate Path ->"
+#    transport-type: "<- amqp | amqp_tcp_only | html | mqtt | mqtt_tcp_only ->"

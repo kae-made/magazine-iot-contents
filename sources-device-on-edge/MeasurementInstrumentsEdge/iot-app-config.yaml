@@ -1,0 +1,7 @@
+## For IoT Edge
+iot-edge:
+    "input-ports": ["envOutput"]
+    "model-id": "dtmi:com:kae_made:BuildingManagement:MI:iotpnp;1"
+#    "blob-on-edge-module-name": "Blob on Edge Module Name or IP Address of Edge Device(network is host mode)"
+#    "blob-on-edge-account-name": "<- Account Name of local blob service ->"
+#    "blob-on-edge-account-key": "<- Account Key of local blob service ->"

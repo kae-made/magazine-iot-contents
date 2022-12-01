@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Kae.IoT.Device" Version="0.0.1" />
+    <PackageReference Include="Kae.IoT.Framework" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="iot-app-config.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

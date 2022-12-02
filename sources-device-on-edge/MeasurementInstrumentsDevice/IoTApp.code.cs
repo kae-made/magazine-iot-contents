@@ -93,11 +93,13 @@ namespace BuildingManagement.Gen.MeasurementInstrumentsDevice
             {
                 Console.WriteLine("BME280 can't be initialized!");
             }
+#if USE_MHZ198
             var mhz198 = new MHZ19BSensor() { Port = "/dev/serial0" };
             if (!mhz198.Initalize())
             {
                 Console.WriteLine("MHZ19B can't be initialized!");
             }
+#endif
             // Sample Logic
             ReportedProperties.DeviceStatus = "ready";
             ReportedProperties.CurrentInterval = 10000;
@@ -128,15 +130,19 @@ namespace BuildingManagement.Gen.MeasurementInstrumentsDevice
                                 sensingData.Environment.AtmosphericPressure = md.Value;
                             }
                         }
+#if USE_MHZ198
                         measuredData = mhz198.Read();
                         foreach (var md in measuredData)
                         {
                             if (md.SensorType == SensorType.CarbonDioxideConcentration)
                             {
-                                sensingData.Environment.CO2Concentration = 300 + rand.NextDouble();
+                                sensingData.Environment.CO2Concentration = md.Value;
                                 break;
                             }
                         }
+#else
+                        sensingData.Environment.CO2Concentration = 300 + rand.NextDouble();
+#endif
                         sensingData.Environment.Brightness = 739.2 + rand.NextDouble();
                         sensingData.Environment.MeasuredTime = DateTime.Now;
                     }
@@ -145,7 +151,7 @@ namespace BuildingManagement.Gen.MeasurementInstrumentsDevice
                 }
             });
             task.Start();
-            iotClient.StartSendD2CMessageAsync(TimeSpan.FromSeconds(10), cancellationTokenSource);
+            await iotClient.StartSendD2CMessageAsync(TimeSpan.FromSeconds(10), cancellationTokenSource);
 
 //            var key = Console.ReadKey();
 //            iotClient.StopSendD2CMessage();

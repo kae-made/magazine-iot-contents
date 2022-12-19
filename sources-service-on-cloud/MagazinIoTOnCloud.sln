@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppIoTHubD2CToADT",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppSignalRService", "FunctionAppSignalRService\FunctionAppSignalRService.csproj", "{071D3C2B-43BD-4566-A2B8-206317D355F0}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppTimerFeature", "FunctionAppTimerFeature\FunctionAppTimerFeature.csproj", "{99A569C9-0DE1-4B34-BBB3-30BD9D683ECD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{071D3C2B-43BD-4566-A2B8-206317D355F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{071D3C2B-43BD-4566-A2B8-206317D355F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{071D3C2B-43BD-4566-A2B8-206317D355F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99A569C9-0DE1-4B34-BBB3-30BD9D683ECD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99A569C9-0DE1-4B34-BBB3-30BD9D683ECD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99A569C9-0DE1-4B34-BBB3-30BD9D683ECD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99A569C9-0DE1-4B34-BBB3-30BD9D683ECD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

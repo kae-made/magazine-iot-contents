@@ -60,7 +60,7 @@ namespace SampleModule
             envStatus.Add("network", netValues);
             foreach(var ni in NetworkInterface.GetAllNetworkInterfaces())
             {
-                if (ni.Name.StartsWith("eth") || ni.Name.StartsWith("wlan"))
+                if (ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
                 {
                     foreach (var ip in ni.GetIPProperties().UnicastAddresses)
                     {
@@ -74,7 +74,7 @@ namespace SampleModule
 
             foreach (var ek in Environment.GetEnvironmentVariables().Keys)
             {
-                Console.WriteLine($"{ek}={Environment.GetEnvironmentVariables()[ek]}");
+                // Console.WriteLine($"{ek}={Environment.GetEnvironmentVariables()[ek]}");
                 Console.WriteLine($"{ek}={Environment.GetEnvironmentVariable((string)ek)}");
             }
 
@@ -82,6 +82,7 @@ namespace SampleModule
             Console.WriteLine(envStatusJson);
             var rp = new TwinCollection(envStatusJson);
             await ioTHubModuleClient.UpdateReportedPropertiesAsync(rp);
+            Console.WriteLine("Reported Properties Updated.");
         }
 
         static async Task DesiredPropertyUpdated(TwinCollection desiredProperties, object userContext)

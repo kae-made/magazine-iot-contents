@@ -16,7 +16,7 @@ class IoTClientAdaptor:
         msg.content_encoding = "utf-8"
         msg.content_type = "application/json"
         print("Sent message")
-        await self.deviceClient.send_message(msg)
+        await self.deviceClient.send_message_to_output(msg, "sensors")
 
     async def updateReportedProperties(self, reportedProperties):
         await self.deviceClient.patch_twin_reported_properties(reportedProperties)

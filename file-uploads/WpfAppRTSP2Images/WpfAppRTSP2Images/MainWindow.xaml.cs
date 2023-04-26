@@ -28,6 +28,7 @@ namespace WpfAppRTSP2Images
         }
 
         RTSP2Images rtsp2images = null;
+        IoTDeviceFileToBlob iotDeviceFileToBlob = null;
 
         private async void buttonControl_Click(object sender, RoutedEventArgs e)
         {
@@ -40,11 +41,17 @@ namespace WpfAppRTSP2Images
                 try
                 {
                     rtsp2images = new RTSP2Images(tbURL.Text, ((ComboBoxItem)cbFormat.SelectedItem).Content.ToString(), int.Parse(tbFPS.Text),
-                       async (w) => { tbWidth.Text = $"{w}"; }, async (h) => { tbHeight.Text = $"{h}"; }, tbFolder.Text);
+                       async (w) => { tbWidth.Text = $"{w}"; }, async (h) => { tbHeight.Text = $"{h}"; }, tbFolder.Text,
+                       FileUpload);
+                    if (cbUpload.IsChecked == true)
+                    {
+                        iotDeviceFileToBlob = new IoTDeviceFileToBlob(tbCS.Text, rtsp2images.UpdateProperties);
+                        await iotDeviceFileToBlob.StartAsync();
+                    }
                     await rtsp2images.StartAsync(ShowLog);
                     buttonControl.Content = "Stop";
                 }
-                catch (Exception ex) { Debug.WriteLine(ex.Message); }
+                catch (Exception ex) { ShowLog(ex.Message); }
             }
             else
             {
@@ -52,6 +59,20 @@ namespace WpfAppRTSP2Images
                 {
                     await rtsp2images.StopAsync(ShowLog);
                     rtsp2images = null;
+                }
+            }
+        }
+
+        private async Task FileUpload(string filePath)
+        {
+            if (cbUpload.IsChecked == true && iotDeviceFileToBlob != null)
+            {
+                await iotDeviceFileToBlob.UploadFile(filePath);
+                await ShowLog($"Updated {filePath}");
+                if (cbDelete.IsChecked == true)
+                {
+                    File.Delete(filePath);
+                    await ShowLog($"Deleted {filePath}");
                 }
             }
         }
@@ -64,6 +85,11 @@ namespace WpfAppRTSP2Images
                 writer.WriteLine(message);
             }
             tbLog.Text = sb.ToString();
+        }
+
+        private void buttonUpload_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

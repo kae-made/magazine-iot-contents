@@ -12,6 +12,8 @@ namespace WpfAppRTSP2Images
     public delegate Task ShowLog(string message);
     public delegate Task SetWidth(int  width);
     public delegate Task SetHeight(int height);
+    public delegate Task UploadFile(string filePath);
+
     public class RTSP2Images
     {
         private string RTSPUrl;
@@ -23,9 +25,10 @@ namespace WpfAppRTSP2Images
 
         private SetWidth setWidth;
         private SetHeight setHeight;
+        private UploadFile uploadFile;
 
         private VideoCapture videoCapture;
-        public RTSP2Images(string url, string format, int fps, SetWidth widthSet, SetHeight heightSet, string outputPath)
+        public RTSP2Images(string url, string format, int fps, SetWidth widthSet, SetHeight heightSet, string outputPath, UploadFile uploadFile)
         {
             RTSPUrl = url;
             OutputFormat = format;
@@ -33,10 +36,12 @@ namespace WpfAppRTSP2Images
 
             setWidth = widthSet;
             setHeight = heightSet;
+            this.uploadFile = uploadFile;
 
             videoCapture = new VideoCapture(RTSPUrl);
-            
+
             OutputPath = outputPath;
+            this.uploadFile = uploadFile;
         }
 
         private CancellationTokenSource cts;
@@ -67,19 +72,34 @@ namespace WpfAppRTSP2Images
 
             while (true)
             {
-                var output = new Mat(videoCapture.FrameHeight, videoCapture.FrameWidth, MatType.CV_8UC3);
-                if (videoCapture.Read(output))
+                var now = DateTime.Now;
+                string format = "";
+                int duration = 10;
+                lock (this)
                 {
-                    string filename = $"{DateTime.Now.ToString("yyyyMMddHHmmss")}.{OutputFormat}";
+                    duration = CaptureFPS;
+                    format = OutputFormat;
+                }
+                var output = new Mat(videoCapture.FrameHeight, videoCapture.FrameWidth, MatType.CV_8UC3);
+                
+                if (videoCapture.Read(output)) // Read seems not to be used
+                {
+                    string filename = $"{DateTime.Now.ToString("yyyyMMddHHmmss")}.{format}";
                     string filepath = Path.Join(OutputPath, filename);
                     output.SaveImage(filepath);
                     await showLog($"Saved - {filename}");
+                    await uploadFile(filepath);
                 }
                 if (cts.Token.IsCancellationRequested)
                 {
                     cts.Token.ThrowIfCancellationRequested();
                 }
-                await Task.Delay(TimeSpan.FromSeconds(CaptureFPS),cts.Token);
+                var nextTime = now.Add(TimeSpan.FromSeconds(duration));
+                while (DateTime.Now < nextTime)
+                {
+                    videoCapture.Grab();
+                    await Task.Delay(TimeSpan.FromMilliseconds(1000/videoCapture.Fps), cts.Token);
+                }
             }
         }
 
@@ -88,6 +108,18 @@ namespace WpfAppRTSP2Images
             await showLog($"Stopped at {DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")}");
             cts.Cancel();
             cts.Dispose();
+        }
+
+        public async Task UpdateProperties(IDictionary<string, object> properties)
+        {
+            if (properties.ContainsKey("duration") && properties.ContainsKey("format"))
+            {
+                lock (this)
+                {
+                    CaptureFPS = int.Parse((string)properties["duration"]);
+                    OutputFormat = (string)properties["format"];
+                }
+            }
         }
     }
 }

@@ -84,7 +84,7 @@ namespace WpfAppRTSP2Images
                 
                 if (videoCapture.Read(output)) // Read seems not to be used
                 {
-                    string filename = $"{DateTime.Now.ToString("yyyyMMddHHmmss")}.{format}";
+                    string filename = $"img-{DateTime.Now.ToString("yyyyMMddHHmmss")}.{format}";
                     string filepath = Path.Join(OutputPath, filename);
                     output.SaveImage(filepath);
                     await showLog($"Saved - {filename}");

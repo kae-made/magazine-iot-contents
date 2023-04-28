@@ -22,7 +22,7 @@ namespace WpfAppRTSP2Images
         {
             this.connectionString = connectionString;
             this.propertiesUpdater = propertiesUploader;
-            deviceClient=DeviceClient.CreateFromConnectionString(connectionString);
+            deviceClient = DeviceClient.CreateFromConnectionString(connectionString);
         }
 
         public async Task StartAsync()
@@ -34,12 +34,16 @@ namespace WpfAppRTSP2Images
             deviceClient.SetDesiredPropertyUpdateCallback(desiredPropertiesResolver, this);
         }
 
-        public async Task UploadFile(string fileName)
+        public async Task UploadFile(string fileName, string blobName = "")
         {
-            var fileInfo = new FileInfo(fileName);
+            if (string.IsNullOrEmpty(blobName))
+            {
+                var fileInfo = new FileInfo(fileName);
+                blobName = fileInfo.Name;
+            }
             var fileUploadSasUriRequest = new FileUploadSasUriRequest()
             {
-                BlobName = fileInfo.Name
+                BlobName = blobName
             };
             var sasUri = await deviceClient.GetFileUploadSasUriAsync(fileUploadSasUriRequest);
             var uploadUri = sasUri.GetBlobUri();
@@ -52,23 +56,30 @@ namespace WpfAppRTSP2Images
 
         private async Task desiredPropertiesResolver(TwinCollection desiredProperties, object userContext)
         {
-            var dp= ResolveDesiredProperties(desiredProperties);
+            var dp = ResolveDesiredProperties(desiredProperties);
             await propertiesUpdater(dp);
         }
 
         private static Dictionary<string, object> ResolveDesiredProperties(TwinCollection twinDP)
         {
             var dp = new Dictionary<string, object>();
-            if (twinDP.Contains("duration"))
+            if (twinDP.Contains(DPKeyDuration))
             {
-                dp.Add("duration", (string)twinDP["duration"]);
+                dp.Add(DPKeyDuration, (string)twinDP[DPKeyDuration]);
             }
-            if (twinDP.Contains("format"))
+            if (twinDP.Contains(DPKeyFormat))
             {
-                dp.Add("format", (string)twinDP["format"]);
+                dp.Add(DPKeyFormat, (string)twinDP[DPKeyFormat]);
             }
-
+            if (twinDP.Contains(DPKeyUploadSizeThreshold))
+            {
+                dp.Add(DPKeyUploadSizeThreshold, (string)twinDP[DPKeyUploadSizeThreshold]);
+            }
             return dp;
         }
+
+        public static readonly string DPKeyDuration = "duration";
+        public static readonly string DPKeyFormat = "format";
+        public static readonly string DPKeyUploadSizeThreshold = "uploadSizeThreshold";
     }
 }

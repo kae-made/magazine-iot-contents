@@ -29,6 +29,8 @@ namespace WpfAppRTSP2Images
 
         RTSP2Images rtsp2images = null;
         IoTDeviceFileToBlob iotDeviceFileToBlob = null;
+        FileCompresser fileCompresser = null;
+        long uploadKBSizeThreshold = 256;
 
         private async void buttonControl_Click(object sender, RoutedEventArgs e)
         {
@@ -45,7 +47,7 @@ namespace WpfAppRTSP2Images
                        FileUpload);
                     if (cbUpload.IsChecked == true)
                     {
-                        iotDeviceFileToBlob = new IoTDeviceFileToBlob(tbCS.Text, rtsp2images.UpdateProperties);
+                        iotDeviceFileToBlob = new IoTDeviceFileToBlob(tbCS.Text, UpdatedIoTDeviceProperties);
                         await iotDeviceFileToBlob.StartAsync();
                     }
                     await rtsp2images.StartAsync(ShowLog);
@@ -63,16 +65,71 @@ namespace WpfAppRTSP2Images
             }
         }
 
+        private async Task UpdatedIoTDeviceProperties(IDictionary<string, object> properties)
+        {
+            if (rtsp2images != null)
+            {
+                rtsp2images.UpdateProperties(properties);
+            }
+            if (properties.ContainsKey(IoTDeviceFileToBlob.DPKeyUploadSizeThreshold))
+            {
+                long threshold = long.Parse((string)properties[IoTDeviceFileToBlob.DPKeyUploadSizeThreshold]);
+                this.Dispatcher.Invoke(() =>
+                {
+                    tbZipSize.Text = $"{threshold}";
+                });
+                lock (this)
+                {
+                    uploadKBSizeThreshold = threshold;
+                }
+            }
+        }
+
         private async Task FileUpload(string filePath)
         {
             if (cbUpload.IsChecked == true && iotDeviceFileToBlob != null)
             {
-                await iotDeviceFileToBlob.UploadFile(filePath);
-                await ShowLog($"Updated {filePath}");
-                if (cbDelete.IsChecked == true)
+                string blobName = "";
+                bool shouldUpload = true;
+                if (cbCompress.IsChecked == true)
                 {
-                    File.Delete(filePath);
-                    await ShowLog($"Deleted {filePath}");
+                    string zipFilePath = System.IO.Path.Join(tbFolder.Text, "tmp.zip");
+                    if (fileCompresser == null)
+                    {
+                        fileCompresser = new FileCompresser() { ZipFilePath = zipFilePath };
+                        fileCompresser.CreateZipFile();
+                    }
+                    fileCompresser.AddFile(filePath);
+                    if (cbDelete.IsChecked == true)
+                    {
+                        File.Delete(filePath);
+                        await ShowLog($"Deleted {filePath}");
+                    }
+                    long currentUploadSize = 0;
+                    lock (this)
+                    {
+                        currentUploadSize = 1024 * uploadKBSizeThreshold;
+                    }
+                    if (fileCompresser.FileSize > currentUploadSize)
+                    {
+                        filePath = zipFilePath;
+                        blobName = $"cmp-{DateTime.Now.ToString("yyyyMMddHHmmss")}.zip";
+                    }
+                    else
+                    {
+                        shouldUpload = false;
+                    }
+
+                }
+                if (shouldUpload)
+                {
+                    await iotDeviceFileToBlob.UploadFile(filePath, blobName);
+                    await ShowLog($"Updated {filePath}");
+                    if (cbDelete.IsChecked == true)
+                    {
+                        File.Delete(filePath);
+                        await ShowLog($"Deleted {filePath}");
+                    }
                 }
             }
         }
@@ -87,9 +144,17 @@ namespace WpfAppRTSP2Images
             tbLog.Text = sb.ToString();
         }
 
-        private void buttonUpload_Click(object sender, RoutedEventArgs e)
+        private void cbCompress_Checked(object sender, RoutedEventArgs e)
         {
-
+            if (cbCompress.IsChecked == true)
+            {
+                tbZipSize.IsEnabled = true;
+                uploadKBSizeThreshold = long.Parse(tbZipSize.Text);
+            }
+            else
+            {
+                tbZipSize.IsEnabled = false;
+            }
         }
     }
 }

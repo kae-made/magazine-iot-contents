@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppTimerFeature", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppEHReceive", "FunctionAppEHReceive\FunctionAppEHReceive.csproj", "{60284742-678E-4957-94E8-991AF178F516}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionAppSimpleBlobReceiver", "..\..\..\..\source\repos\MagazinIoTOnCloud\FunctionAppSimpleBlobReceiver\FunctionAppSimpleBlobReceiver.csproj", "{3BB33B7B-7630-48DC-B2BA-4A87A3307B26}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{60284742-678E-4957-94E8-991AF178F516}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60284742-678E-4957-94E8-991AF178F516}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60284742-678E-4957-94E8-991AF178F516}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BB33B7B-7630-48DC-B2BA-4A87A3307B26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BB33B7B-7630-48DC-B2BA-4A87A3307B26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BB33B7B-7630-48DC-B2BA-4A87A3307B26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BB33B7B-7630-48DC-B2BA-4A87A3307B26}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

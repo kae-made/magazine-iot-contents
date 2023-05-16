@@ -7,6 +7,7 @@ from azure.iot.device import Message, MethodResponse
 from azure.iot.device.aio import IoTHubModuleClient
 import json
 import time
+import os
 
 get_duration_in_sec = 60    
 blob_account_name = None
@@ -18,6 +19,7 @@ getimageloop_task = None
 device_client = None
 lock = None
 waiting_flag = True
+device_id = ''
 
 def stdin_listener():
     """
@@ -51,6 +53,7 @@ async def get_image_loop(device_client, lock):
     global container_name
     global rtsp_service_url
     global get_duration_in_sec
+    global device_id
 
     try:
         print("settings:")
@@ -67,7 +70,7 @@ async def get_image_loop(device_client, lock):
                 imgbuf = base64.b64decode(response.content)
                 imgfmt= response.headers['image-server-format']
                 now = datetime.datetime.now()
-                blob_name = "img-{}.{}".format(now.strftime("%Y%m%d%H%M%S"),imgfmt)
+                blob_name = "{}-img-{}.{}".format(device_id, now.strftime("%Y%m%d%H%M%S"), imgfmt)
                 blobclient = blobservice.get_blob_client(container=container_name, blob=blob_name)
                 blobclient.upload_blob(imgbuf)
                 print("Uploaded {}".format(blob_name))
@@ -146,7 +149,10 @@ async def update_reported_properties(patch):
 
 async def main():
     global device_client
+    global device_id
     global lock
+
+    device_id = os.environ['IOTEDGE_DEVICEID']
 
     print('initializing...')
 
